@@ -1,5 +1,6 @@
 package com.example.mpecco3355.simstagram;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -16,20 +17,19 @@ import com.example.mpecco3355.simstagram.database.User;
 
 public class Signup extends AppCompatActivity {
 
-
-
+    Context context;
 
     private EditText ed_email,ed_password,ed_user;
-    private  String  email, password,user;
+    private  String  email, password, username;
     Button Createbtn;
-
+    User userExisting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sginup);
 
-
+        context = this;
         ed_email = (EditText) findViewById(R.id.EmailAdress);
         ed_user = (EditText) findViewById(R.id.UserName);
         ed_password = (EditText) findViewById(R.id.word);
@@ -47,21 +47,15 @@ public class Signup extends AppCompatActivity {
         if (!validate()){
             Toast.makeText(this, "Sign in Failed", Toast.LENGTH_SHORT).show();
         }
-        else {
-            try {
-                User userAdd = new User(user,password,email);
-                App.get().getDb().userDAO().addUser(userAdd);
-            }
-            catch (Exception e){
-                Log.e("db" , e.getMessage());
-                Toast.makeText(this, "registration", Toast.LENGTH_SHORT).show();
+        else{
 
-            }
-            onSigninSuccess();
+            new signupTask().execute();
+
         }
 
     }
     public void onSigninSuccess(){
+        Toast.makeText(this, "Account made!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(Signup.this ,MainActivity.class);
         startActivity(intent);
     }
@@ -78,7 +72,7 @@ public class Signup extends AppCompatActivity {
                 valid = false;
             }
 
-            if (user.isEmpty() ||user.equals(null) ) {
+            if (username.isEmpty() || username.equals(null) ) {
                 ed_user.setError("Please enter in a Username ");
                 valid = false;
             }
@@ -91,34 +85,53 @@ public class Signup extends AppCompatActivity {
     public void intialise(){
         email = ed_email.getText().toString().trim();
         password = ed_password.getText().toString().trim();
-        user = ed_user.getText().toString().trim();
+        username = ed_user.getText().toString().trim();
 
 
 
 
     }
- /*
+
     protected class  signupTask extends AsyncTask<Void , Void , Boolean>{
 
 
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            User existing;
-            try(
-                  existing = App.db.userDAO().getUser(user);
-                    if (existing != null){
-                       return false;
-                        }
 
+            try {
+                userExisting = App.db.userDAO().getUser(username);
+                if (userExisting != null) {
+                    return false;
+                }
 
+                User user = new User(username,password,email);
+                App.db.userDAO().addUser(user);
 
+                return true;
+            }
+            catch (Exception e){
 
-            return true;
+                Log.e("DBSignup", e.getMessage());
+                return false;
+            }
         }
 
- )*/
+        @Override
+        protected void onPostExecute(final Boolean success){
+            if(success){
+
+                onSigninSuccess();
+            }
+            else{
+
+                Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show();
+
+            }
+        }
 
 
+
+    }
 
 }
