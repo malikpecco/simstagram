@@ -1,6 +1,8 @@
 package com.example.mpecco3355.simstagram;
 
+import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,11 +19,15 @@ public class MainActivity extends AppCompatActivity {
     private  String  user, password;
     Button Sgininbtn;
     Button Sginupbtn;
+    User loggingInUser;
+    Context context;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+            context = this;
         ed_user = (EditText) findViewById(R.id.userN);
         ed_password = (EditText) findViewById(R.id.Password);
         Sgininbtn = (Button) findViewById(R.id.Sgininbtn);
@@ -41,12 +47,16 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     public  void Reg(){
-        if (!validate()){
+        trimName();
+        new signinTask().execute();
+
+       /* if (!validate()){
             Toast.makeText(this, "Sign in Failed", Toast.LENGTH_SHORT).show();
         }
         else {
-            onSigninSuccess();
-        }
+
+
+        }*/
 
     }
     public void onSigninSuccess(){
@@ -55,37 +65,20 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
 
     }
-    public boolean validate(){
-        user = ed_user.getText().toString().trim();
-        password = ed_password.getText().toString().trim();
-
-
+    public boolean validate() {
         boolean valid = true;
-        User loggingInUser = null;
-        try {
-            loggingInUser = App.get().getDb().userDAO().getUser(user);
-
-            if(!password.equals(loggingInUser.password)){
-                ed_password.setError("your acount dose not exits  ");
-                valid = true;
-                App.loginUser = loggingInUser.id;
-            }
-            else {
-                valid = false;
-            }
-            return valid;
-        }catch (Exception e){
-            Log.e("my tage",e.getMessage());
-            return false;
-        }
-
-       /*
-       *  boolean valid = true;
 
         if( user.isEmpty()){
             ed_user.setError("Plese Enter a Vaild userame");
             valid = false;
-        }
+        }else {valid = false;}
+
+        return valid;
+
+    }
+
+       /*
+       *
         User loginUser = App.db.userDAO().getUser(user);
 
         if(password.equals(loginUser.password)) {
@@ -94,13 +87,44 @@ public class MainActivity extends AppCompatActivity {
 
         }
         else {
-            valid = false;
+
         }
        * */
+        public void trimName(){
+            user = ed_user.getText().toString().trim();
+            password = ed_password.getText().toString().trim();
 
+        }
 
+    protected class  signinTask extends AsyncTask<Void , Void , Boolean> {
+
+    @Override
+    protected Boolean doInBackground(Void... params) {
+        try {
+            loggingInUser = App.get().getDb().userDAO().getUser(user);
+            if ( password.equals( loggingInUser.password)){
+                App.loginUser = loggingInUser.id;
+                return true;
+            }
+        }
+        catch (Exception e){
+            Log.e("LOGIN", e.getMessage());
+            return false;
+        }
+
+        return false;
     }
-    
 
+    @Override
+    protected void onPostExecute(final Boolean success) {
 
+        if (success) {
+            onSigninSuccess();
+
+        } else {
+            Toast.makeText(context, "you have entered in the wrong password", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+}
 }
